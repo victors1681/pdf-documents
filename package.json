@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon ./developmentIndex.js",
     "publish": "npm publish --access public",
+    "release:minor": "npm version minor",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
     "lint:check": "eslint .",
