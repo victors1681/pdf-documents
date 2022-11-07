@@ -2,7 +2,7 @@ const fs = require("fs");
 const PDFDocument = require("pdfkit");
 const fetch = require("node-fetch");
 
-async function createInvoice(invoice, path) {
+async function createInvoice(invoice, file) {
   let doc = new PDFDocument({ size: "A4", margin: 20 });
 
   await generateHeader(doc, invoice);
@@ -11,7 +11,27 @@ async function createInvoice(invoice, path) {
   generateFooter(doc, invoice);
 
   doc.end();
-  doc.pipe(fs.createWriteStream(path));
+ 
+  // will create a file in the current directory
+  if(typeof file === "string"){
+    doc.pipe(fs.createWriteStream(file));
+    return;
+  }
+
+  //file object it will create an write stream
+ 
+  const promise = new Promise((resolve, rejected) => {
+    const writeStream = file.createWriteStream({
+      resumable: false,
+      contentType: "application/pdf",
+    });
+    writeStream.on("finish", () => resolve("PDF created successfully"));
+    writeStream.on("error", (e) => rejected("Error Invoice: ", e));
+
+    doc.pipe(writeStream);
+  }); 
+
+  return promise; 
 }
 
 const MARGIN_LEFT = 20;
