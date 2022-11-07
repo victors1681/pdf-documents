@@ -1,0 +1,27 @@
+{
+  "name": "pdf-documents",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "victor santos",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.6.7",    
+    "pdfkit": "^0.13.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.27.0",
+    "prettier": "^2.7.1",
+    "nodemon": "^2.0.20",
+    "eslint-config-prettier": "^8.5.0"
+  }
+}
