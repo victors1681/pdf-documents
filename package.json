@@ -1,6 +1,6 @@
 {
   "name": "pdf-documents",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Invoice and receipt pdf format for mseller.app",
   "main": "index.js",
   "scripts": {
