@@ -247,7 +247,7 @@ function renderTableHeader(doc, documentTableTop) {
   );
 
   generateHr(doc, documentTableTop + 13);
-  doc.font("Helvetica");  
+  doc.font("Helvetica");
 }
 
 function renderPage(doc, count) {
@@ -255,22 +255,24 @@ function renderPage(doc, count) {
     .fontSize(7)
     .text(`Page: ${count}`, 20, 20, { align: "right" })
     .font("Helvetica")
-    .fontSize(10)
+    .fontSize(10);
 }
 
 function renderContinue(doc, documentTableTop, i) {
   const subtotalPosition = documentTableTop + (i + 1) * 20;
   doc
     .fontSize(7)
-    .text(`============== CONTINUA ==============`, 0, subtotalPosition, { align: "center" })
+    .text(`============== CONTINUA ==============`, 0, subtotalPosition, {
+      align: "center",
+    })
     .font("Helvetica")
-    .fontSize(10)
+    .fontSize(10);
 }
 
 async function generateInvoiceTable(doc, document) {
   let i;
   const documentTableTop = 250;
-  
+
   renderTableHeader(doc, documentTableTop);
 
   let yPos = 0;
@@ -291,11 +293,11 @@ async function generateInvoiceTable(doc, document) {
       formatCurrency(item.subtotal)
     );
     generateHr(doc, position + 12);
-    if(yPos > 20) {
-      renderPage(doc,page ++);
-      renderTotals(doc,document, documentTableTop, i);
+    if (yPos > 20) {
+      renderPage(doc, page++);
+      renderTotals(doc, document, documentTableTop, i);
       renderContinue(doc, documentTableTop, i);
-      generateFooter(doc,document);
+      generateFooter(doc, document);
       await renderQrCode(doc, document, {
         x: 20,
         y: documentTableTop + (i + 1) * 20,
@@ -304,27 +306,25 @@ async function generateInvoiceTable(doc, document) {
        * Render new page
        */
       doc.addPage();
-      renderPage(doc,page ++);
+      renderPage(doc, page++);
       await generateHeader(doc, document);
       generateCustomerInformation(doc, document);
       renderTableHeader(doc, documentTableTop);
-      
-      yPos = 0 
+
+      yPos = 0;
     }
-    yPos++
+    yPos++;
   }
 
-  renderTotals(doc,document, documentTableTop, yPos)
+  renderTotals(doc, document, documentTableTop, yPos);
 
   await renderQrCode(doc, document, {
     x: 20,
     y: documentTableTop + (yPos + 1) * 20,
   });
-
 }
 
-function renderTotals(doc,document, documentTableTop, i) {
-
+function renderTotals(doc, document, documentTableTop, i) {
   const subtotalPosition = documentTableTop + (i + 1) * 20;
   generateTableRow(
     doc,

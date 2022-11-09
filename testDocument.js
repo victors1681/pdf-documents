@@ -341,7 +341,6 @@ const invoice = {
       tax: 20.0,
       subtotal: 320.0,
     },
-    
   ],
   subtotal: 700.0,
   discount: 0.0,
