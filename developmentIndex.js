@@ -20,10 +20,10 @@ const invoice = {
   },
   ncf: "E310000000001",
   ncfDescription: "Factura de Crédito Fiscal Electiónica",
-  invoice: "8877392",
+  documentNo: "8877392",
   dueDay: "09-09-2023",
   issueDay: "08-09-2023",
-  documentType: "invoice",
+  documentType: "quote",
   footerMsg:
     "Nota: No aplica descuentos por pronto pago. Si paga con transferencia, incluir código del cliente o No. Factura",
   items: [
@@ -56,5 +56,5 @@ const invoice = {
 
 const test = createInvoice(invoice, "invoice.pdf");
 test.then((result) => {
-  console.log(result)
-})
+  console.log(result);
+});
