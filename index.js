@@ -1,3 +1,3 @@
-const { createInvoice } = require("./createInvoice.js");
+const { createDocument } = require("./createDocument.js");
 
-exports.createInvoice = createInvoice;
+exports.createDocument = createDocument;

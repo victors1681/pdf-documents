@@ -2,7 +2,7 @@ const fs = require("fs");
 const PDFDocument = require("pdfkit");
 const fetch = require("node-fetch");
 
-async function createInvoice(document, file) {
+async function createReceipt(document, file) {
   let doc = new PDFDocument({ size: "A4", margin: 20 });
 
   await generateHeader(doc, document);
@@ -88,17 +88,7 @@ async function generateHeader(doc, document) {
       align: "left",
     });
 
-  switch (document.documentType) {
-    case "invoice":
-      renderInvoiceData(doc, document, topDelta);
-      break;
-    case "order":
-      renderOrderData(doc, document, topDelta);
-      break;
-    case "quote":
-      renderQuoteData(doc, document, topDelta);
-      break;
-  }
+  renderReceiptData(doc, document, topDelta);
 
   doc.moveDown();
 }
@@ -108,71 +98,47 @@ async function generateHeader(doc, document) {
  * @param {*} document
  * @param {*} topDelta
  */
-function renderInvoiceData(doc, document, topDelta) {
-  const { ncf, ncfDescription, dueDay, documentNo, issueDay } = document;
-  const margin = spacingTop(65);
+function renderReceiptData(doc, document, topDelta) {
+  const {
+    paymentType,
+    documentNo,
+    isFutureCheck,
+    futureDate,
+    referenceNo,
+    bankName,
+  } = document;
   const topRight = spacingTop(50);
 
   doc
-    .text(`Fecha Emisión: ${issueDay}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    })
     .fontSize(10)
     .font("Helvetica-Bold")
-    .text(ncfDescription, MARGIN_RIGHT, topRight.add(0), { align: "right" })
+    .text("RECIBO DE PAGO", MARGIN_RIGHT, topRight.add(0), { align: "right" })
     .font("Helvetica")
-    .text(`e-NCF: ${ncf}`, 100, topRight.add(topDelta), { align: "right" })
-    .text(`No.Factura: ${documentNo}`, 100, topRight.add(topDelta), {
+    .text(`No.Recibo: ${documentNo}`, 100, topRight.add(topDelta + 5), {
       align: "right",
     })
-    .text(
-      `Fecha Vencimiento: ${formatDate(dueDay)}`,
-      MARGIN_RIGHT,
-      topRight.add(topDelta),
-      { align: "right" }
-    );
-}
-
-/**
- * Render Order data
- * @param {*} doc
- * @param {*} document
- * @param {*} topDelta
- */
-function renderOrderData(doc, document, topDelta) {
-  const { documentNo } = document;
-  const topRight = spacingTop(50);
-
-  doc
-    .fontSize(15)
-    .font("Helvetica-Bold")
-    .text("Pedido", MARGIN_RIGHT, topRight.add(0), { align: "right" })
-    .font("Helvetica")
-    .fontSize(10)
-    .text(`No. Pedido: ${documentNo}`, 100, topRight.add(topDelta + 5), {
+    .text(`Tipo Pago: ${paymentType}`, 100, topRight.add(topDelta), {
       align: "right",
     });
-}
 
-/**
- * Render quote data
- * @param {*} doc
- * @param {*} document
- * @param {*} topDelta
- */
-function renderQuoteData(doc, document, topDelta) {
-  const { documentNo } = document;
-  const topRight = spacingTop(50);
-
-  doc
-    .fontSize(15)
-    .font("Helvetica-Bold")
-    .text("Cotización", MARGIN_RIGHT, topRight.add(0), { align: "right" })
-    .font("Helvetica")
-    .fontSize(10)
-    .text(`No. Cotización: ${documentNo}`, 100, topRight.add(topDelta + 5), {
+  if (bankName) {
+    doc.text(`Banco: ${bankName}`, 100, topRight.add(topDelta), {
       align: "right",
     });
+  }
+
+  if (isFutureCheck) {
+    doc
+      .font("Helvetica-Bold")
+      .text(`Cheque Futurista: ${futureDate}`, 100, topRight.add(topDelta), {
+        align: "right",
+      })
+      .font("Helvetica");
+  }
+
+  doc.text(`No. Referencia: ${referenceNo}`, 100, topRight.add(topDelta), {
+    align: "right",
+  });
 }
 
 function generateCustomerInformation(doc, document) {
@@ -216,14 +182,14 @@ function generateInvoiceTable(doc, document) {
   generateTableRow(
     doc,
     documentTableTop,
-    "Cantidad",
-    "Código",
-    "Descripción",
-    "Unidad",
-    "Precio",
+    "Factura",
+    "Observación",
     "Descuento",
     "Impuesto",
-    "SubTotal"
+    "SubTotal",
+    "Total",
+    "Fecha",
+    "Total Recibido"
   );
 
   generateHr(doc, documentTableTop + 13);
@@ -235,17 +201,42 @@ function generateInvoiceTable(doc, document) {
     generateTableRow(
       doc,
       position,
-      item.quantity,
-      item.item,
-      item.description,
-      item.unit,
-      formatCurrency(item.amount),
+      item.document,
+      item.note,
       formatCurrency(item.discount),
       formatCurrency(item.tax),
-      formatCurrency(item.subtotal)
+      formatCurrency(item.subtotal),
+      formatCurrency(item.total),
+      item.date,
+      formatCurrency(item.collected)
     );
 
     generateHr(doc, position + 12);
+  }
+
+  /**
+   * Print big label
+   */
+  const futuristPosition = documentTableTop + (i + 1) * 20;
+  if (document.isFutureCheck) {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(17)
+      .text(`Cheque Futurista: ${document.futureDate}`, 20, futuristPosition, {
+        align: "left",
+      })
+      .fontSize(10)
+      .font("Helvetica");
+  }
+
+  const notePosition = futuristPosition + 50;
+  if (document.note) {
+    doc
+      .text(`Observación: ${document.note}`, 20, notePosition, {
+        align: "left",
+      })
+      .fontSize(10)
+      .font("Helvetica");
   }
 
   const subtotalPosition = documentTableTop + (i + 1) * 20;
@@ -257,9 +248,9 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Subtotal",
+    "Total Documentos:",
     "",
-    formatCurrency(document.subtotal)
+    formatCurrency(document.documentTotal)
   );
 
   const discountPosition = subtotalPosition + 15;
@@ -271,11 +262,11 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Descuento",
+    "Total Descuentos:",
     "",
-    formatCurrency(document.discount)
+    formatCurrency(document.discountTotal)
   );
-
+  doc.font("Helvetica-Bold");
   const taxToPosition = discountPosition + 15;
   generateTableRow(
     doc,
@@ -285,24 +276,9 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Impuesto",
+    "Total Cobrado:",
     "",
-    formatCurrency(document.tax)
-  );
-
-  const duePosition = taxToPosition + 15;
-  doc.font("Helvetica-Bold");
-  generateTableRow(
-    doc,
-    duePosition,
-    "",
-    "",
-    "",
-    "",
-    "",
-    "Total",
-    "",
-    formatCurrency(document.total)
+    formatCurrency(document.totalCollected)
   );
   doc.font("Helvetica");
 }
@@ -321,25 +297,25 @@ function generateFooter(doc, document) {
 function generateTableRow(
   doc,
   y,
-  quantity,
-  item,
-  description,
-  unit,
-  unitCost,
+  document,
+  note,
   discount,
   tax,
-  lineTotal
+  subtotal,
+  total,
+  date,
+  collected
 ) {
   doc
     .fontSize(8)
-    .text(quantity, 20, y, { width: 90 })
-    .text(item, 65, y, { width: 90 })
-    .text(description, 115, y)
-    .text(unit, 360, y, { width: 28, align: "left" })
-    .text(unitCost, 400, y, { width: 90, align: "left" })
-    .text(discount, 440, y, { width: 90, align: "left" })
-    .text(tax, 490, y, { width: 90, align: "left" })
-    .text(lineTotal, 530, y, { align: "left" });
+    .text(document, 20, y, { width: 90 })
+    .text(note, 80, y, { width: 90 })
+    .text(discount, 220, y, { width: 90 })
+    .text(tax, 270, y)
+    .text(subtotal, 320, y, { width: 90, align: "left" })
+    .text(total, 380, y, { width: 90, align: "left" })
+    .text(date, 440, y, { width: 90, align: "left" })
+    .text(collected, 510, y, { width: 90, align: "left" });
 }
 
 function generateHr(doc, y) {
@@ -355,15 +331,6 @@ function formatCurrency(cents) {
   return "$" + cents.toFixed(2);
 }
 
-function formatDate(str) {
-  const date = new Date(str);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-
-  return year + "/" + month + "/" + day;
-}
-
 module.exports = {
-  createInvoice,
+  createReceipt,
 };

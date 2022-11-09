@@ -4,11 +4,13 @@
   "description": "Invoice and receipt pdf format for mseller.app",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon ./developmentIndex.js",
+    "dev": "nodemon ./index.js",
+    "dev:receipt": "nodemon ./testReceipt.js",
+    "dev:document": "nodemon ./testDocument.js",
     "publish": "npm publish --access public",
     "release:minor": "npm version minor",
     "format:check": "prettier --check .",
-    "format:write": "prettier --write .",
+    "format": "prettier --write .",
     "lint:check": "eslint .",
     "lint:fix": "eslint --fix .",
     "test": "echo \"Error: no test specified\" && exit 1"

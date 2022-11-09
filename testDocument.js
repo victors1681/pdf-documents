@@ -1,4 +1,4 @@
-const { createInvoice } = require("./createInvoice.js");
+const { createDocument } = require("./createDocument.js");
 
 const invoice = {
   company: {
@@ -23,7 +23,11 @@ const invoice = {
   documentNo: "8877392",
   dueDay: "09-09-2023",
   issueDay: "08-09-2023",
-  documentType: "quote",
+  documentType: "invoice",
+  qrCodeUrl:
+    "https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=Hello%20world&choe=UTF-8&margin=0",
+  securityCode: "C78q+V",
+  digitalSignatureDate: "27-01-2020",
   footerMsg:
     "Nota: No aplica descuentos por pronto pago. Si paga con transferencia, incluir código del cliente o No. Factura",
   items: [
@@ -54,7 +58,7 @@ const invoice = {
   total: 740.0,
 };
 
-const test = createInvoice(invoice, "invoice.pdf");
+const test = createDocument(invoice, "invoice.pdf");
 test.then((result) => {
   console.log(result);
 });
