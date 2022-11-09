@@ -231,10 +231,7 @@ function generateCustomerInformation(doc, document) {
   generateHr(doc, 230);
 }
 
-async function generateInvoiceTable(doc, document) {
-  let i;
-  const documentTableTop = 250;
-
+function renderTableHeader(doc, documentTableTop) {
   doc.font("Helvetica-Bold");
   generateTableRow(
     doc,
@@ -250,11 +247,19 @@ async function generateInvoiceTable(doc, document) {
   );
 
   generateHr(doc, documentTableTop + 13);
-  doc.font("Helvetica");
+  doc.font("Helvetica");  
+}
 
+async function generateInvoiceTable(doc, document) {
+  let i;
+  const documentTableTop = 250;
+  
+  renderTableHeader(doc, documentTableTop);
+
+  let yPos = 0;
   for (i = 0; i < document.items.length; i++) {
     const item = document.items[i];
-    const position = documentTableTop + (i + 1) * 19;
+    const position = documentTableTop + (yPos + 1) * 19;
     generateTableRow(
       doc,
       position,
@@ -267,14 +272,37 @@ async function generateInvoiceTable(doc, document) {
       formatCurrency(item.tax),
       formatCurrency(item.subtotal)
     );
-
     generateHr(doc, position + 12);
+    if(yPos > 20) {
+      renderTotals(doc,document, documentTableTop, i);
+      generateFooter(doc,document);
+      await renderQrCode(doc, document, {
+        x: 20,
+        y: documentTableTop + (i + 1) * 20,
+      });
+      /**
+       * Render new page
+       */
+      doc.addPage();
+      await generateHeader(doc, document);
+      generateCustomerInformation(doc, document);
+      renderTableHeader(doc, documentTableTop);
+      
+      yPos = 0 
+    }
+    yPos++
   }
+
+  renderTotals(doc,document, documentTableTop, yPos)
 
   await renderQrCode(doc, document, {
     x: 20,
-    y: documentTableTop + (i + 1) * 20,
+    y: documentTableTop + (yPos + 1) * 20,
   });
+
+}
+
+function renderTotals(doc,document, documentTableTop, i) {
 
   const subtotalPosition = documentTableTop + (i + 1) * 20;
   generateTableRow(
