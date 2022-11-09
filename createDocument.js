@@ -250,6 +250,23 @@ function renderTableHeader(doc, documentTableTop) {
   doc.font("Helvetica");  
 }
 
+function renderPage(doc, count) {
+  doc
+    .fontSize(7)
+    .text(`Page: ${count}`, 20, 20, { align: "right" })
+    .font("Helvetica")
+    .fontSize(10)
+}
+
+function renderContinue(doc, documentTableTop, i) {
+  const subtotalPosition = documentTableTop + (i + 1) * 20;
+  doc
+    .fontSize(7)
+    .text(`============== CONTINUA ==============`, 0, subtotalPosition, { align: "center" })
+    .font("Helvetica")
+    .fontSize(10)
+}
+
 async function generateInvoiceTable(doc, document) {
   let i;
   const documentTableTop = 250;
@@ -257,6 +274,7 @@ async function generateInvoiceTable(doc, document) {
   renderTableHeader(doc, documentTableTop);
 
   let yPos = 0;
+  let page = 1;
   for (i = 0; i < document.items.length; i++) {
     const item = document.items[i];
     const position = documentTableTop + (yPos + 1) * 19;
@@ -274,7 +292,9 @@ async function generateInvoiceTable(doc, document) {
     );
     generateHr(doc, position + 12);
     if(yPos > 20) {
+      renderPage(doc,page ++);
       renderTotals(doc,document, documentTableTop, i);
+      renderContinue(doc, documentTableTop, i);
       generateFooter(doc,document);
       await renderQrCode(doc, document, {
         x: 20,
@@ -284,6 +304,7 @@ async function generateInvoiceTable(doc, document) {
        * Render new page
        */
       doc.addPage();
+      renderPage(doc,page ++);
       await generateHeader(doc, document);
       generateCustomerInformation(doc, document);
       renderTableHeader(doc, documentTableTop);
