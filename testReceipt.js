@@ -1,6 +1,10 @@
 const { createReceipt } = require("./createReceipt");
 
 const data = {
+  locale: {
+    code: 'es-DO',
+    currency: 'DOP',
+  },
   company: {
     name: "Mobile Seller",
     address: "Washington Street",
@@ -17,6 +21,7 @@ const data = {
     address: "Calle segunda #01, Gascue, Distrito Nacioonal, Rep,Dom",
     seller: "231-Victor Santos",
     email: "client023-22@gmail.com",
+    sellerPhone: '809-222-2222',
   },
 
   documentNo: "8877392",

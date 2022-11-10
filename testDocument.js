@@ -1,6 +1,10 @@
 const { createDocument } = require("./createDocument.js");
 
 const invoice = {
+  locale: {
+    code: 'es-DO',
+    currency: 'DOP',
+  },
   company: {
     name: "Mobile Seller",
     address: "Washington Street",
@@ -17,13 +21,14 @@ const invoice = {
     address: "Calle segunda #01, Gascue, Distrito Nacioonal, Rep,Dom",
     seller: "231-Victor Santos",
     email: "client023-22@gmail.com",
+    sellerPhone: '809-222-2222',
   },
   ncf: "E310000000001",
   ncfDescription: "Factura de Crédito Fiscal Electiónica",
   documentNo: "8877392",
   dueDay: "09-09-2023",
   issueDay: "08-09-2023",
-  documentType: "invoice",
+  documentType: "order",
   qrCodeUrl:
     "https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=Hello%20world&choe=UTF-8&margin=0",
   securityCode: "C78q+V",

@@ -287,10 +287,10 @@ async function generateInvoiceTable(doc, document) {
       item.item,
       item.description,
       item.unit,
-      formatCurrency(item.amount),
-      formatCurrency(item.discount),
-      formatCurrency(item.tax),
-      formatCurrency(item.subtotal)
+      formatCurrency(item.amount, document, false),
+      formatCurrency(item.discount, document, false),
+      formatCurrency(item.tax, document, false),
+      formatCurrency(item.subtotal, document, false)
     );
     generateHr(doc, position + 12);
     if (yPos > 20) {
@@ -336,7 +336,7 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Subtotal",
     "",
-    formatCurrency(document.subtotal)
+    formatCurrency(document.subtotal, document)
   );
 
   const discountPosition = subtotalPosition + 15;
@@ -350,7 +350,7 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Descuento",
     "",
-    formatCurrency(document.discount)
+    formatCurrency(document.discount, document)
   );
 
   const taxToPosition = discountPosition + 15;
@@ -364,7 +364,7 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Impuesto",
     "",
-    formatCurrency(document.tax)
+    formatCurrency(document.tax, document)
   );
 
   const duePosition = taxToPosition + 15;
@@ -379,7 +379,7 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Total",
     "",
-    formatCurrency(document.total)
+    formatCurrency(document.total, document)
   );
   doc.font("Helvetica");
 }
@@ -428,8 +428,21 @@ function generateHr(doc, y) {
     .stroke();
 }
 
-function formatCurrency(cents) {
-  return "$" + cents.toFixed(2);
+function formatCurrency(number, document, withSymbol = true) {
+  const code = document.locale && document.locale.code || 'en-US'
+  const currency = document.locale && document.locale.currency || 'USD'
+  try{
+  if(typeof number === "number"){ 
+    if(withSymbol){
+      return (number).toLocaleString(code, { style: "currency", currency})
+    }
+    return (number).toLocaleString(code, {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      
+  }
+  }catch(err){
+    console.error(code, currency, err)
+  }
+  return number;
 }
 
 function formatDate(str) {
