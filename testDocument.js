@@ -1,9 +1,14 @@
 const { createDocument } = require("./createDocument.js");
 
 const invoice = {
+  whatsapp: {
+    recipient: "19292861173",
+    template: "quote",
+    fileName: "Cotización.pdf",
+  },
   locale: {
-    code: 'es-DO',
-    currency: 'DOP',
+    code: "es-DO",
+    currency: "DOP",
   },
   company: {
     name: "Mobile Seller",
@@ -21,7 +26,7 @@ const invoice = {
     address: "Calle segunda #01, Gascue, Distrito Nacioonal, Rep,Dom",
     seller: "231-Victor Santos",
     email: "client023-22@gmail.com",
-    sellerPhone: '809-222-2222',
+    sellerPhone: "809-222-2222",
   },
   ncf: "E310000000001",
   ncfDescription: "Factura de Crédito Fiscal Electiónica",

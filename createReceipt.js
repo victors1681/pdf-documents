@@ -1,6 +1,7 @@
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
 const fetch = require("node-fetch");
+const { formatCurrency } = require("./utils");
 
 async function createReceipt(document, file) {
   let doc = new PDFDocument({ size: "A4", margin: 20 });
@@ -203,12 +204,12 @@ function generateInvoiceTable(doc, document) {
       position,
       item.document,
       item.note,
-      formatCurrency(item.discount),
-      formatCurrency(item.tax),
-      formatCurrency(item.subtotal),
-      formatCurrency(item.total),
+      formatCurrency(item.discount, document, false),
+      formatCurrency(item.tax, document, false),
+      formatCurrency(item.subtotal, document, false),
+      formatCurrency(item.total, document, false),
       item.date,
-      formatCurrency(item.collected)
+      formatCurrency(item.collected, document, false)
     );
 
     generateHr(doc, position + 12);
@@ -250,7 +251,7 @@ function generateInvoiceTable(doc, document) {
     "",
     "Total Documentos:",
     "",
-    formatCurrency(document.documentTotal)
+    formatCurrency(document.documentTotal, document)
   );
 
   const discountPosition = subtotalPosition + 15;
@@ -264,7 +265,7 @@ function generateInvoiceTable(doc, document) {
     "",
     "Total Descuentos:",
     "",
-    formatCurrency(document.discountTotal)
+    formatCurrency(document.discountTotal, document)
   );
   doc.font("Helvetica-Bold");
   const taxToPosition = discountPosition + 15;
@@ -278,7 +279,7 @@ function generateInvoiceTable(doc, document) {
     "",
     "Total Cobrado:",
     "",
-    formatCurrency(document.totalCollected)
+    formatCurrency(document.totalCollected, document)
   );
   doc.font("Helvetica");
 }
@@ -325,10 +326,6 @@ function generateHr(doc, y) {
     .moveTo(MARGIN_LEFT, y)
     .lineTo(570, y)
     .stroke();
-}
-
-function formatCurrency(cents) {
-  return "$" + cents.toFixed(2);
 }
 
 module.exports = {

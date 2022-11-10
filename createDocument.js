@@ -1,6 +1,7 @@
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
 const fetch = require("node-fetch");
+const { formatCurrency } = require("./utils");
 
 async function createDocument(document, file) {
   let doc = new PDFDocument({ size: "A4", margin: 20 });
@@ -426,23 +427,6 @@ function generateHr(doc, y) {
     .moveTo(MARGIN_LEFT, y)
     .lineTo(570, y)
     .stroke();
-}
-
-function formatCurrency(number, document, withSymbol = true) {
-  const code = document.locale && document.locale.code || 'en-US'
-  const currency = document.locale && document.locale.currency || 'USD'
-  try{
-  if(typeof number === "number"){ 
-    if(withSymbol){
-      return (number).toLocaleString(code, { style: "currency", currency})
-    }
-    return (number).toLocaleString(code, {minimumFractionDigits: 2, maximumFractionDigits: 2})
-      
-  }
-  }catch(err){
-    console.error(code, currency, err)
-  }
-  return number;
 }
 
 function formatDate(str) {
