@@ -242,8 +242,8 @@ function renderTableHeader(doc, documentTableTop) {
     "Descripción",
     "Unidad",
     "Precio",
-    "Descuento",
-    "Impuesto",
+    "Desc.",
+    "Imp.",
     "SubTotal"
   );
 
@@ -388,9 +388,9 @@ function renderTotals(doc, document, documentTableTop, i) {
 function generateFooter(doc, document) {
   doc
     .fontSize(8)
-    .text(document.footerMsg, 50, 780, { align: "center", width: 500 })
+    .text(document.footerMsg, 50, 765, { align: "center", width: 500 })
     .fontSize(8)
-    .text("developed by www.mseller.app", 50, 790, {
+    .text("developed by www.mseller.app", 50, 775, {
       align: "center",
       width: 500,
     });
@@ -411,13 +411,13 @@ function generateTableRow(
   doc
     .fontSize(8)
     .text(quantity, 20, y, { width: 90 })
-    .text(item, 65, y, { width: 90 })
-    .text(description, 115, y)
+    .text(item, 57, y, { width: 90 })
+    .text(description, 110, y)
     .text(unit, 360, y, { width: 28, align: "left" })
-    .text(unitCost, 400, y, { width: 90, align: "left" })
-    .text(discount, 440, y, { width: 90, align: "left" })
-    .text(tax, 490, y, { width: 90, align: "left" })
-    .text(lineTotal, 530, y, { align: "left" });
+    .text(unitCost, 390, y, { width: 90, align: "left" })
+    .text(discount, 430, y, { width: 90, align: "left" })
+    .text(tax, 470, y, { width: 90, align: "left" })
+    .text(lineTotal, 510, y, { align: "left" });
 }
 
 function generateHr(doc, y) {

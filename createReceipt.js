@@ -287,9 +287,9 @@ function generateInvoiceTable(doc, document) {
 function generateFooter(doc, document) {
   doc
     .fontSize(8)
-    .text(document.footerMsg, 50, 780, { align: "center", width: 500 })
+    .text(document.footerMsg, 50, 765, { align: "center", width: 500 })
     .fontSize(8)
-    .text("developed by www.mseller.app", 50, 790, {
+    .text("developed by www.mseller.app", 50, 775, {
       align: "center",
       width: 500,
     });
