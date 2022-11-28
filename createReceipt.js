@@ -241,6 +241,7 @@ function generateInvoiceTable(doc, document) {
   }
 
   const subtotalPosition = documentTableTop + (i + 1) * 20;
+  const subtotal = document.totalCollected - document.discountTotal;
   generateTableRow(
     doc,
     subtotalPosition,
@@ -249,9 +250,9 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Total Documentos:",
+    "Sub Total:",
     "",
-    formatCurrency(document.documentTotal, document)
+    formatCurrency(subtotal, document)
   );
 
   const discountPosition = subtotalPosition + 15;
