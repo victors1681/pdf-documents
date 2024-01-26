@@ -97,7 +97,7 @@ async function generateHeader(doc, document) {
   const img = Buffer.from(await data.arrayBuffer());
 
   doc
-    .image(img, MARGIN_LEFT, 15, { width: 100 })
+    .image(img, MARGIN_LEFT, 15, { height: 30 })
     .fillColor("#444444")
     .fontSize(12)
     .font("Helvetica-Bold")
@@ -209,23 +209,25 @@ function generateCustomerInformation(doc, document) {
     .fontSize(10)
     .text(`Cliente:`, MARGIN_LEFT, customerInformationTop)
     .font("Helvetica-Bold")
-    .text(name, 100, customerInformationTop)
+    .text(name, 70, customerInformationTop, {
+      width: 700,
+    })
     .font("Helvetica")
     .text("RNC:", MARGIN_LEFT, customerInformationTop + 15)
-    .text(rnc, 100, customerInformationTop + 15)
+    .text(rnc, 70, customerInformationTop + 15)
     .text("Teléfono:", MARGIN_LEFT, customerInformationTop + 30)
-    .text(phone, 100, customerInformationTop + 30)
+    .text(phone, 70, customerInformationTop + 30)
     .text("Dirección:", MARGIN_LEFT, customerInformationTop + 45)
-    .text(address, 100, customerInformationTop + 45)
+    .text(address, 70, customerInformationTop + 45)
 
     .font("Helvetica")
-    .text("Vendedor:", 300, customerInformationTop)
+    .text("Vendedor:", 330, customerInformationTop + 15)
     .font("Helvetica-Bold")
-    .text(seller, 380, customerInformationTop)
+    .text(seller, 380, customerInformationTop + 15)
 
     .font("Helvetica")
-    .text("Email:", 300, customerInformationTop + 15)
-    .text(email, 380, customerInformationTop + 15)
+    .text("Email:", 330, customerInformationTop + 30)
+    .text(email, 380, customerInformationTop + 30)
 
     .moveDown();
 
