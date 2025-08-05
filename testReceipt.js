@@ -20,7 +20,7 @@ const data = {
     branch: "West New York",
   },
   customer: {
-    name: "COMERCIO, SRL",
+    name: "ALMACEN FERRETERIA DEL DETALLISTA CXA Y MAXIMO, SRL",
     rnc: "130000001",
     phone: "829-223-2338",
     address: "Calle segunda #01, Gascue, Distrito Nacioonal, Rep,Dom",

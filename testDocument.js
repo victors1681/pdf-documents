@@ -14,7 +14,7 @@ const invoice = {
     name: "Mobile Seller",
     address: "Washington Street",
     city: "West New York",
-    logo: "https://www.mobile-seller.com/mbs/wp-content/uploads/2015/09/mseller-logo-dark.png",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/React-icon.svg/320px-React-icon.svg.png",
     rnc: "101000001",
     phone: "809-288-2222",
     branch: "West New York",
@@ -35,7 +35,7 @@ const invoice = {
   issueDay: "08-09-2023",
   documentType: "order",
   qrCodeUrl:
-    "https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=Hello%20world&choe=UTF-8&margin=0",
+    "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Hello%20World",
   securityCode: "C78q+V",
   digitalSignatureDate: "27-01-2020",
   footerMsg:

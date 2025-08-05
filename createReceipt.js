@@ -1,96 +1,27 @@
-const fs = require("fs");
-const PDFDocument = require("pdfkit");
-const fetch = require("node-fetch");
 const { formatCurrency } = require("./utils");
+const {
+  MARGIN_LEFT,
+  MARGIN_RIGHT,
+  spacingTop,
+  createPDF,
+  generateCustomerInformation,
+  generateFooter,
+  generateHr,
+  generateCommonHeader,
+} = require("./pdfUtils");
 
 async function createReceipt(document, file) {
-  let doc = new PDFDocument({ size: "A4", margin: 20 });
-
-  await generateHeader(doc, document);
-  generateCustomerInformation(doc, document);
-  generateInvoiceTable(doc, document);
-  generateFooter(doc, document);
-
-  doc.end();
-
-  // will create a file in the current directory
-  if (typeof file === "string") {
-    doc.pipe(fs.createWriteStream(file));
-    return;
-  }
-
-  //file object it will create an write stream
-
-  const promise = new Promise((resolve, rejected) => {
-    const writeStream = file.createWriteStream({
-      resumable: false,
-      contentType: "application/pdf",
-    });
-    writeStream.on("finish", () => resolve("PDF created successfully"));
-    writeStream.on("error", (e) => rejected("Error Invoice: ", e));
-
-    doc.pipe(writeStream);
+  return await createPDF(document, file, async (doc, document) => {
+    await generateHeader(doc, document);
+    generateCustomerInformation(doc, document);
+    generateInvoiceTable(doc, document);
+    generateFooter(doc, document);
   });
-
-  return promise;
 }
 
-const MARGIN_LEFT = 20;
-const MARGIN_RIGHT = 20;
-/**
- * Save the default value and increase base on some delta
- * @param {*} defaultValue
- * @returns
- */
-const spacingTop = (defaultValue) => {
-  let defaultTop = defaultValue;
-  return {
-    add: (add) => {
-      defaultTop = defaultTop + add;
-      return defaultTop;
-    },
-  };
-};
 async function generateHeader(doc, document) {
-  const {
-    name: companyName,
-    address,
-    logo,
-    rnc,
-    phone,
-    branch,
-  } = document.company;
-  const { issueDay } = document;
-
-  const topDelta = 13; //top space between line
-  const margin = spacingTop(65);
-
-  const data = await fetch(logo);
-  // eslint-disable-next-line no-undef
-  const img = Buffer.from(await data.arrayBuffer());
-
-  doc
-    .image(img, MARGIN_LEFT, 15, { width: 100 })
-    .fillColor("#444444")
-    .fontSize(12)
-    .font("Helvetica-Bold")
-    .text(companyName, MARGIN_LEFT, 50, { align: "left" })
-    .font("Helvetica")
-    .fontSize(10)
-    .text(branch, MARGIN_LEFT, margin.add(0), { align: "left" })
-    .text(`RNC ${rnc}`, MARGIN_LEFT, margin.add(topDelta), { align: "left" })
-    .text(`Teléfono: ${phone}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    })
-    .text(`Dirección: ${address}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    })
-    .text(`Fecha Emisión: ${issueDay}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    });
-
+  const { topDelta } = await generateCommonHeader(doc, document);
   renderReceiptData(doc, document, topDelta);
-
   doc.moveDown();
 }
 /**
@@ -142,39 +73,6 @@ function renderReceiptData(doc, document, topDelta) {
   });
 }
 
-function generateCustomerInformation(doc, document) {
-  const { name, address, seller, phone, rnc, email } = document.customer;
-
-  generateHr(doc, 140);
-  const customerInformationTop = 160;
-
-  doc
-    .fontSize(10)
-    .text(`Cliente:`, MARGIN_LEFT, customerInformationTop)
-    .font("Helvetica-Bold")
-    .text(name, 100, customerInformationTop)
-    .font("Helvetica")
-    .text("RNC:", MARGIN_LEFT, customerInformationTop + 15)
-    .text(rnc, 100, customerInformationTop + 15)
-    .text("Teléfono:", MARGIN_LEFT, customerInformationTop + 30)
-    .text(phone, 100, customerInformationTop + 30)
-    .text("Dirección:", MARGIN_LEFT, customerInformationTop + 45)
-    .text(address, 100, customerInformationTop + 45)
-
-    .font("Helvetica")
-    .text("Vendedor:", 300, customerInformationTop)
-    .font("Helvetica-Bold")
-    .text(seller, 380, customerInformationTop)
-
-    .font("Helvetica")
-    .text("Email:", 300, customerInformationTop + 15)
-    .text(email, 380, customerInformationTop + 15)
-
-    .moveDown();
-
-  generateHr(doc, 230);
-}
-
 function generateInvoiceTable(doc, document) {
   let i;
   const documentTableTop = 250;
@@ -223,9 +121,14 @@ function generateInvoiceTable(doc, document) {
     doc
       .font("Helvetica-Bold")
       .fontSize(17)
-      .text(`Cheque Futurista: ${document.futureDate}`, 20, futuristPosition, {
-        align: "left",
-      })
+      .text(
+        `Cheque Futurista: ${document.futureDate}`,
+        MARGIN_LEFT,
+        futuristPosition,
+        {
+          align: "left",
+        }
+      )
       .fontSize(10)
       .font("Helvetica");
   }
@@ -233,7 +136,7 @@ function generateInvoiceTable(doc, document) {
   const notePosition = futuristPosition + 50;
   if (document.note) {
     doc
-      .text(`Observación: ${document.note}`, 20, notePosition, {
+      .text(`Observación: ${document.note}`, MARGIN_LEFT, notePosition, {
         align: "left",
       })
       .fontSize(10)
@@ -250,9 +153,10 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Sub Total:",
     "",
-    formatCurrency(subtotal, document)
+    "Sub Total:",
+    formatCurrency(subtotal, document),
+    "left"
   );
 
   const discountPosition = subtotalPosition + 15;
@@ -264,9 +168,10 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Total Descuentos:",
     "",
-    formatCurrency(document.discountTotal, document)
+    "Total Desc.:",
+    `-${formatCurrency(document.discountTotal, document)}`,
+    "left"
   );
   doc.font("Helvetica-Bold");
   const taxToPosition = discountPosition + 15;
@@ -278,22 +183,12 @@ function generateInvoiceTable(doc, document) {
     "",
     "",
     "",
-    "Total Cobrado:",
     "",
-    formatCurrency(document.totalCollected, document)
+    "Total Cobrado:",
+    formatCurrency(document.totalCollected, document),
+    "left"
   );
   doc.font("Helvetica");
-}
-
-function generateFooter(doc, document) {
-  doc
-    .fontSize(8)
-    .text(document.footerMsg, 50, 765, { align: "center", width: 500 })
-    .fontSize(8)
-    .text("developed by www.mseller.app", 50, 775, {
-      align: "center",
-      width: 500,
-    });
 }
 
 function generateTableRow(
@@ -306,27 +201,19 @@ function generateTableRow(
   subtotal,
   total,
   date,
-  collected
+  collected,
+  align = "right"
 ) {
   doc
     .fontSize(8)
-    .text(document, 20, y, { width: 90 })
-    .text(note, 80, y, { width: 90 })
-    .text(discount, 220, y, { width: 90 })
-    .text(tax, 270, y)
-    .text(subtotal, 320, y, { width: 90, align: "left" })
-    .text(total, 380, y, { width: 90, align: "left" })
-    .text(date, 440, y, { width: 90, align: "left" })
-    .text(collected, 510, y, { width: 90, align: "left" });
-}
-
-function generateHr(doc, y) {
-  doc
-    .strokeColor("#aaaaaa")
-    .lineWidth(1)
-    .moveTo(MARGIN_LEFT, y)
-    .lineTo(570, y)
-    .stroke();
+    .text(document, MARGIN_LEFT, y, { width: 60 })
+    .text(note, 85, y, { width: 70 })
+    .text(discount, 160, y, { width: 50, align: align })
+    .text(tax, 215, y, { width: 50, align: align })
+    .text(subtotal, 270, y, { width: 60, align: align })
+    .text(total, 335, y, { width: 60, align: align })
+    .text(date, 400, y, { width: 70, align: align })
+    .text(collected, 475, y, { width: 75, align: align });
 }
 
 module.exports = {

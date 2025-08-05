@@ -1,120 +1,27 @@
-const fs = require("fs");
-const PDFDocument = require("pdfkit");
-const fetch = require("node-fetch");
 const { formatCurrency } = require("./utils");
+const {
+  MARGIN_RIGHT,
+  spacingTop,
+  createPDF,
+  renderQrCode,
+  generateCustomerInformation,
+  generateFooter,
+  generateHr,
+  formatDate,
+  generateCommonHeader,
+} = require("./pdfUtils");
 
 async function createDocument(document, file) {
-  let doc = new PDFDocument({ size: "A4", margin: 20 });
-
-  await generateHeader(doc, document);
-  generateCustomerInformation(doc, document);
-  await generateInvoiceTable(doc, document);
-  generateFooter(doc, document);
-
-  doc.end();
-
-  // will create a file in the current directory
-  if (typeof file === "string") {
-    doc.pipe(fs.createWriteStream(file));
-    return;
-  }
-
-  //file object it will create an write stream
-
-  const promise = new Promise((resolve, rejected) => {
-    const writeStream = file.createWriteStream({
-      resumable: false,
-      contentType: "application/pdf",
-    });
-    writeStream.on("finish", () => resolve("PDF created successfully"));
-    writeStream.on("error", (e) => rejected("Error Invoice: ", e));
-
-    doc.pipe(writeStream);
+  return await createPDF(document, file, async (doc, document) => {
+    await generateHeader(doc, document);
+    generateCustomerInformation(doc, document);
+    await generateInvoiceTable(doc, document);
+    generateFooter(doc, document);
   });
-
-  return promise;
 }
 
-const MARGIN_LEFT = 20;
-const MARGIN_RIGHT = 20;
-/**
- * Save the default value and increase base on some delta
- * @param {*} defaultValue
- * @returns
- */
-const spacingTop = (defaultValue) => {
-  let defaultTop = defaultValue;
-  return {
-    add: (add) => {
-      defaultTop = defaultTop + add;
-      return defaultTop;
-    },
-  };
-};
-
-async function renderQrCode(doc, document, pos) {
-  if (!document.qrCodeUrl) {
-    return;
-  }
-
-  const data = await fetch(document.qrCodeUrl);
-  // eslint-disable-next-line no-undef
-  const img = Buffer.from(await data.arrayBuffer());
-
-  doc
-    .image(img, pos.x, pos.y, { width: 49, height: 49 })
-    .fillColor("#444444")
-    .fontSize(7)
-    .font("Helvetica")
-    .text(`Código de Seguridad: ${document.securityCode}`, pos.x, pos.y + 50, {
-      align: "left",
-    })
-    .font("Helvetica")
-    .fontSize(7)
-    .text(
-      `Fecha de Firma Digital: ${document.digitalSignatureDate}`,
-      pos.x,
-      pos.y + 60,
-      { align: "left" }
-    );
-}
 async function generateHeader(doc, document) {
-  const {
-    name: companyName,
-    address,
-    logo,
-    rnc,
-    phone,
-    branch,
-  } = document.company;
-  const { issueDay } = document;
-
-  const topDelta = 13; //top space between line
-  const margin = spacingTop(65);
-
-  const data = await fetch(logo);
-  // eslint-disable-next-line no-undef
-  const img = Buffer.from(await data.arrayBuffer());
-
-  doc
-    .image(img, MARGIN_LEFT, 15, { height: 30 })
-    .fillColor("#444444")
-    .fontSize(12)
-    .font("Helvetica-Bold")
-    .text(companyName, MARGIN_LEFT, 50, { align: "left" })
-    .font("Helvetica")
-    .fontSize(10)
-    .text(branch, MARGIN_LEFT, margin.add(0), { align: "left" })
-    .text(`RNC ${rnc}`, MARGIN_LEFT, margin.add(topDelta), { align: "left" })
-    .text(`Teléfono: ${phone}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    })
-    .text(`Dirección: ${address}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    })
-    .text(`Fecha Emisión: ${issueDay}`, MARGIN_LEFT, margin.add(topDelta), {
-      align: "left",
-    });
+  const { topDelta } = await generateCommonHeader(doc, document);
 
   switch (document.documentType) {
     case "invoice":
@@ -197,41 +104,6 @@ function renderQuoteData(doc, document, topDelta) {
     .text(`No. Cotización: ${documentNo}`, 100, topRight.add(topDelta + 5), {
       align: "right",
     });
-}
-
-function generateCustomerInformation(doc, document) {
-  const { name, address, seller, phone, rnc, email } = document.customer;
-
-  generateHr(doc, 140);
-  const customerInformationTop = 160;
-
-  doc
-    .fontSize(10)
-    .text(`Cliente:`, MARGIN_LEFT, customerInformationTop)
-    .font("Helvetica-Bold")
-    .text(name, 70, customerInformationTop, {
-      width: 700,
-    })
-    .font("Helvetica")
-    .text("RNC:", MARGIN_LEFT, customerInformationTop + 15)
-    .text(rnc, 70, customerInformationTop + 15)
-    .text("Teléfono:", MARGIN_LEFT, customerInformationTop + 30)
-    .text(phone, 70, customerInformationTop + 30)
-    .text("Dirección:", MARGIN_LEFT, customerInformationTop + 45)
-    .text(address, 70, customerInformationTop + 45)
-
-    .font("Helvetica")
-    .text("Vendedor:", 330, customerInformationTop + 15)
-    .font("Helvetica-Bold")
-    .text(seller, 380, customerInformationTop + 15)
-
-    .font("Helvetica")
-    .text("Email:", 330, customerInformationTop + 30)
-    .text(email, 380, customerInformationTop + 30)
-
-    .moveDown();
-
-  generateHr(doc, 230);
 }
 
 function renderTableHeader(doc, documentTableTop) {
@@ -339,7 +211,8 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Subtotal",
     "",
-    formatCurrency(document.subtotal, document)
+    formatCurrency(document.subtotal, document),
+    "left"
   );
 
   const discountPosition = subtotalPosition + 15;
@@ -353,7 +226,8 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Descuento",
     "",
-    formatCurrency(document.discount, document)
+    formatCurrency(document.discount, document),
+    "left"
   );
 
   const taxToPosition = discountPosition + 15;
@@ -367,7 +241,8 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Impuesto",
     "",
-    formatCurrency(document.tax, document)
+    formatCurrency(document.tax, document),
+    "left"
   );
 
   const duePosition = taxToPosition + 15;
@@ -382,20 +257,10 @@ function renderTotals(doc, document, documentTableTop, i) {
     "",
     "Total",
     "",
-    formatCurrency(document.total, document)
+    formatCurrency(document.total, document),
+    "left"
   );
   doc.font("Helvetica");
-}
-
-function generateFooter(doc, document) {
-  doc
-    .fontSize(8)
-    .text(document.footerMsg, 50, 765, { align: "center", width: 500 })
-    .fontSize(8)
-    .text("developed by www.mseller.app", 50, 775, {
-      align: "center",
-      width: 500,
-    });
 }
 
 function generateTableRow(
@@ -408,36 +273,19 @@ function generateTableRow(
   unitCost,
   discount,
   tax,
-  lineTotal
+  lineTotal,
+  align = "right"
 ) {
   doc
     .fontSize(8)
     .text(quantity, 20, y, { width: 90 })
     .text(item, 57, y, { width: 90 })
     .text(description, 110, y)
-    .text(unit, 360, y, { width: 28, align: "left" })
-    .text(unitCost, 390, y, { width: 90, align: "left" })
-    .text(discount, 430, y, { width: 90, align: "left" })
-    .text(tax, 470, y, { width: 90, align: "left" })
-    .text(lineTotal, 510, y, { align: "left" });
-}
-
-function generateHr(doc, y) {
-  doc
-    .strokeColor("#aaaaaa")
-    .lineWidth(1)
-    .moveTo(MARGIN_LEFT, y)
-    .lineTo(570, y)
-    .stroke();
-}
-
-function formatDate(str) {
-  const date = new Date(str);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-
-  return year + "/" + month + "/" + day;
+    .text(unit, 360, y, { width: 28, align: align })
+    .text(unitCost, 390, y, { width: 35, align: align })
+    .text(discount, 430, y, { width: 40, align: align })
+    .text(tax, 470, y, { width: 35, align: align })
+    .text(lineTotal, 510, y, { width: 60, align: align });
 }
 
 module.exports = {
