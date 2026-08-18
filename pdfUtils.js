@@ -56,6 +56,33 @@ async function createPDF(document, file, generateContent) {
 }
 
 /**
+ * QR code images are fetched once per document and reused on every page.
+ * A WeakMap keyed by the document keeps the cache from outliving the request.
+ */
+const qrCodeCache = new WeakMap();
+
+async function loadQrCodeImage(document) {
+  if (qrCodeCache.has(document)) {
+    return qrCodeCache.get(document);
+  }
+
+  const data = await fetch(document.qrCodeUrl);
+  const contentType = data.headers.get("content-type");
+
+  if (!contentType || !contentType.startsWith("image/")) {
+    console.warn("QR Code URL did not return a valid image format");
+    qrCodeCache.set(document, null);
+    return null;
+  }
+
+  // eslint-disable-next-line no-undef
+  const img = Buffer.from(await data.arrayBuffer());
+  qrCodeCache.set(document, img);
+
+  return img;
+}
+
+/**
  * Render QR code on the document
  */
 async function renderQrCode(doc, document, pos) {
@@ -64,16 +91,11 @@ async function renderQrCode(doc, document, pos) {
   }
 
   try {
-    const data = await fetch(document.qrCodeUrl);
-    const contentType = data.headers.get("content-type");
+    const img = await loadQrCodeImage(document);
 
-    if (!contentType || !contentType.startsWith("image/")) {
-      console.warn("QR Code URL did not return a valid image format");
+    if (!img) {
       return;
     }
-
-    // eslint-disable-next-line no-undef
-    const img = Buffer.from(await data.arrayBuffer());
 
     doc
       .image(img, pos.x, pos.y, { width: 49, height: 49 })
@@ -145,7 +167,12 @@ function generateCustomerInformation(doc, document) {
 function generateFooter(doc, document) {
   doc
     .fontSize(8)
-    .text(document.footerMsg, 50, 765, { align: "center", width: 500 })
+    .text(document.footerMsg, 50, 765, {
+      align: "center",
+      width: 500,
+      height: 10,
+      ellipsis: true,
+    })
     .fontSize(8)
     .text("developed by www.mseller.app", 50, 775, {
       align: "center",

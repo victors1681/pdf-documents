@@ -1,5 +1,6 @@
 const { formatCurrency } = require("./utils");
 const {
+  MARGIN_LEFT,
   MARGIN_RIGHT,
   spacingTop,
   createPDF,
@@ -106,6 +107,31 @@ function renderQuoteData(doc, document, topDelta) {
     });
 }
 
+/**
+ * Layout of the items table.
+ *
+ * Every y coordinate below is absolute on the current page, so the values must
+ * always be derived from the rows drawn on *that* page. Deriving them from the
+ * global item index makes them grow past the bottom of the page, and PDFKit
+ * then silently inserts a page for every single text() call that lands there -
+ * which is how a 100 item quote used to render as 104 pages.
+ */
+const TABLE_TOP = 250; // y where the items table starts
+const ROW_HEIGHT = 19; // vertical space taken by one item row
+const ROWS_PER_PAGE = 22; // rows that fit above the totals block
+const TOTALS_GAP = 22; // space between the last row and the totals block
+
+/**
+ * Top of the totals / QR code block for a page holding `rowsOnPage` rows.
+ * Clamped so it can never fall below the printable area of the page.
+ */
+function totalsTop(rowsOnPage) {
+  const top = TABLE_TOP + rowsOnPage * ROW_HEIGHT + TOTALS_GAP;
+  const maxTop = TABLE_TOP + ROWS_PER_PAGE * ROW_HEIGHT + TOTALS_GAP;
+
+  return Math.min(top, maxTop);
+}
+
 function renderTableHeader(doc, documentTableTop) {
   doc.font("Helvetica-Bold");
   generateTableRow(
@@ -133,11 +159,10 @@ function renderPage(doc, count) {
     .fontSize(10);
 }
 
-function renderContinue(doc, documentTableTop, i) {
-  const subtotalPosition = documentTableTop + (i + 1) * 20;
+function renderContinue(doc, top) {
   doc
     .fontSize(7)
-    .text(`============== CONTINUA ==============`, 0, subtotalPosition, {
+    .text(`============== CONTINUA ==============`, 0, top, {
       align: "center",
     })
     .font("Helvetica")
@@ -145,16 +170,40 @@ function renderContinue(doc, documentTableTop, i) {
 }
 
 async function generateInvoiceTable(doc, document) {
-  let i;
-  const documentTableTop = 250;
+  const items = Array.isArray(document.items) ? document.items : [];
 
-  renderTableHeader(doc, documentTableTop);
-
-  let yPos = 0;
   let page = 1;
-  for (i = 0; i < document.items.length; i++) {
-    const item = document.items[i];
-    const position = documentTableTop + (yPos + 1) * 19;
+  let rowsOnPage = 0;
+
+  renderTableHeader(doc, TABLE_TOP);
+
+  for (const item of items) {
+    if (rowsOnPage === ROWS_PER_PAGE) {
+      /**
+       * Close the current page before opening the next one.
+       */
+      const blockTop = totalsTop(rowsOnPage);
+
+      renderPage(doc, page);
+      renderTotals(doc, document, blockTop);
+      renderContinue(doc, blockTop);
+      generateFooter(doc, document);
+      await renderQrCode(doc, document, { x: MARGIN_LEFT, y: blockTop });
+
+      /**
+       * Render new page
+       */
+      doc.addPage();
+      page++;
+      await generateHeader(doc, document);
+      generateCustomerInformation(doc, document);
+      renderTableHeader(doc, TABLE_TOP);
+
+      rowsOnPage = 0;
+    }
+
+    const position = TABLE_TOP + (rowsOnPage + 1) * ROW_HEIGHT;
+
     generateTableRow(
       doc,
       position,
@@ -168,42 +217,24 @@ async function generateInvoiceTable(doc, document) {
       formatCurrency(item.subtotal, document, false)
     );
     generateHr(doc, position + 12);
-    if (yPos > 20) {
-      renderPage(doc, page++);
-      renderTotals(doc, document, documentTableTop, i);
-      renderContinue(doc, documentTableTop, i);
-      generateFooter(doc, document);
-      await renderQrCode(doc, document, {
-        x: 20,
-        y: documentTableTop + (i + 1) * 20,
-      });
-      /**
-       * Render new page
-       */
-      doc.addPage();
-      renderPage(doc, page++);
-      await generateHeader(doc, document);
-      generateCustomerInformation(doc, document);
-      renderTableHeader(doc, documentTableTop);
 
-      yPos = 0;
-    }
-    yPos++;
+    rowsOnPage++;
   }
 
-  renderTotals(doc, document, documentTableTop, yPos);
+  const blockTop = totalsTop(rowsOnPage);
 
-  await renderQrCode(doc, document, {
-    x: 20,
-    y: documentTableTop + (yPos + 1) * 20,
-  });
+  if (page > 1) {
+    renderPage(doc, page);
+  }
+  renderTotals(doc, document, blockTop);
+
+  await renderQrCode(doc, document, { x: MARGIN_LEFT, y: blockTop });
 }
 
-function renderTotals(doc, document, documentTableTop, i) {
-  const subtotalPosition = documentTableTop + (i + 1) * 20;
+function renderTotals(doc, document, top) {
   generateTableRow(
     doc,
-    subtotalPosition,
+    top,
     "",
     "",
     "",
@@ -215,7 +246,7 @@ function renderTotals(doc, document, documentTableTop, i) {
     "left"
   );
 
-  const discountPosition = subtotalPosition + 15;
+  const discountPosition = top + 15;
   generateTableRow(
     doc,
     discountPosition,
