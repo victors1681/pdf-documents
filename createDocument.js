@@ -121,6 +121,15 @@ const ROW_HEIGHT = 19; // vertical space taken by one item row
 const ROWS_PER_PAGE = 22; // rows that fit above the totals block
 const TOTALS_GAP = 22; // space between the last row and the totals block
 
+// The description cell has to stop before the "Unidad" column at x=360.
+// Without a width PDFKit wraps it at the page margin instead, so a long
+// description would run across every column to its right and spill onto the
+// row below. Bounding it keeps one item per row, which is what ROWS_PER_PAGE
+// assumes.
+const DESCRIPTION_LEFT = 110;
+const DESCRIPTION_WIDTH = 245;
+const CELL_HEIGHT = 10; // one line at font size 8
+
 /**
  * Top of the totals / QR code block for a page holding `rowsOnPage` rows.
  * Clamped so it can never fall below the printable area of the page.
@@ -311,7 +320,11 @@ function generateTableRow(
     .fontSize(8)
     .text(quantity, 20, y, { width: 90 })
     .text(item, 57, y, { width: 90 })
-    .text(description, 110, y)
+    .text(description, DESCRIPTION_LEFT, y, {
+      width: DESCRIPTION_WIDTH,
+      height: CELL_HEIGHT,
+      ellipsis: true,
+    })
     .text(unit, 360, y, { width: 28, align: align })
     .text(unitCost, 390, y, { width: 35, align: align })
     .text(discount, 430, y, { width: 40, align: align })

@@ -66,7 +66,16 @@ async function loadQrCodeImage(document) {
     return qrCodeCache.get(document);
   }
 
-  const data = await fetch(document.qrCodeUrl);
+  let data;
+
+  try {
+    data = await fetch(document.qrCodeUrl);
+  } catch (error) {
+    // Remember the failure so the remaining pages do not retry the request.
+    qrCodeCache.set(document, null);
+    throw error;
+  }
+
   const contentType = data.headers.get("content-type");
 
   if (!contentType || !contentType.startsWith("image/")) {
